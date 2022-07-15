@@ -16,11 +16,14 @@ describe("Lock", function () {
 
     // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount] = await ethers.getSigners();
+    
+    const Casino = await ethers.getContractFactory("Casino");
+    const casino = await Casino.deploy(/* TODO add here constructor params*/);
+  
+    await casino.deployed();
+    
 
-    const Lock = await ethers.getContractFactory("Lock");
-    const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-
-    return { lock, unlockTime, lockedAmount, owner, otherAccount };
+    return { casino, owner, otherAccount };
   }
 
   describe("Deployment", function () {
