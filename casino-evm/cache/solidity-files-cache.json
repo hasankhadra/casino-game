@@ -109,8 +109,8 @@
       ]
     },
     "/Users/hasan/vscode-projs/hackathons/casino-game/casino-evm/contracts/Casino.sol": {
-      "lastModificationDate": 1658068305625,
-      "contentHash": "7d2ebabea882a1952df6be4a28ac60e7",
+      "lastModificationDate": 1658078152178,
+      "contentHash": "c851889359d4c4348e255e40b36d3e49",
       "sourceName": "contracts/Casino.sol",
       "solcConfig": {
         "version": "0.8.9",

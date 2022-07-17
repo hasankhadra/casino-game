@@ -11,9 +11,9 @@ describe("Casino", function () {
 
     // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount] = await ethers.getSigners();
-    
+    console.log();
     console.log("Owner Address", owner.address)
-    console.log("Other Account", otherAccount.address)
+    console.log("Other account Address", otherAccount.address)
 
     const potPrizePercentage = 10;
     const potIncomePercentage = 10;
@@ -23,16 +23,22 @@ describe("Casino", function () {
     const biddingAmount = 20;
     const timeToLive = 3600;
     const numbersRange = 8;
+    
+    const provider = ethers.provider;
 
     const Casino = await ethers.getContractFactory("Casino");
     const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
       ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
 
     await casino.deployed();
+    
+    console.log("Casino Address", casino.address);
+    console.log();
 
     return {
       potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
-      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
+      provider
     };
   }
 
@@ -202,42 +208,89 @@ describe("Casino", function () {
   describe("Withdrawals", function () {
     it("User cannot withdraw if he has no funds available", async function () {
       const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
-      
+
       await expect(casino.connect(otherAccount).withdraw()).to.be
-      .revertedWith("You can't withdraw yet - Not allowed to withdraw 0 funds!");
+        .revertedWith("You can't withdraw yet - Not allowed to withdraw 0 funds!");
 
     });
 
     it("User cannot withdraw if contract has no funds available", async function () {
       const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
-      
+
       await casino.changeToBePaid(otherAccount.address, 10);
 
       await expect(casino.connect(otherAccount).withdraw()).to.be
-      .revertedWith("Sorry, there are no enough funds in the game contract, will fund it soon!");
+        .revertedWith("Sorry, there are no enough funds in the game contract, will fund it soon!");
 
     });
 
     it("User able to withdraw his funds", async function () {
       const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
-      
-      await casino.changeToBePaid(otherAccount.address, ethers.utils.parseEther("0.5"));
 
+      await casino.changeToBePaid(otherAccount.address, ethers.utils.parseEther("0.5"));
+      
       await owner.sendTransaction({
         to: casino.address,
-        value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
+        value: ethers.BigNumber.from("1000000000000000000")
       });
 
+      let oldOtherAccountBalance = await otherAccount.getBalance();
+
       await casino.connect(otherAccount).withdraw();
+      
+      expect(await casino.toBePaid(otherAccount.address)).to.be.equal(0);
 
-      await expect(otherAccount.getBalance()).to.be.equal(ethers.utils.parseEther("0.5"));
-
+      expect(await otherAccount.getBalance()).to.be.greaterThan(oldOtherAccountBalance);
     });
 
     it("non-owner cannot withdrawOwner", async function () {
-      const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
-      
+      const { casino, otherAccount } = await loadFixture(deployCasinoVariant1);
+
       await expect(casino.connect(otherAccount).withdrawOwner(10)).to.be.revertedWith("Only owner!");
+
+    });
+
+    it("owner cannot withdrawOwner if there are no enough funds", async function () {
+      const { casino, owner, provider } = await loadFixture(deployCasinoVariant1);
+
+      await owner.sendTransaction({
+        to: casino.address,
+        value: ethers.BigNumber.from("1000000000000000000")
+      });
+
+      await expect(casino.connect(owner).withdrawOwner(ethers.BigNumber.from("2000000000000000000"))).to.be.revertedWith("No enough balance for the amount requested!");
+
+    });
+
+    it("owner is able to withdrawOwner exactly the amount of existing funds", async function () {
+      const { casino, owner, provider } = await loadFixture(deployCasinoVariant1);
+
+      await owner.sendTransaction({
+        to: casino.address,
+        value: ethers.BigNumber.from("1000000000000000000")
+      });
+
+      const oldOwnerBalance = await owner.getBalance();
+
+      await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("1000000000000000000"));
+
+      expect(await owner.getBalance()).to.be.greaterThan(oldOwnerBalance);
+
+    });
+
+    it("owner is able to withdrawOwner less than existing funds", async function () {
+      const { casino, owner, provider } = await loadFixture(deployCasinoVariant1);
+
+      await owner.sendTransaction({
+        to: casino.address,
+        value: ethers.BigNumber.from("1000000000000000000")
+      });
+
+      const oldOwnerBalance = await owner.getBalance();
+
+      await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("500000000000000000"));
+
+      expect(await owner.getBalance()).to.be.greaterThan(oldOwnerBalance);
 
     });
   });
@@ -277,19 +330,19 @@ describe("Casino", function () {
   //     });
   //   });
 
-  //   // describe("Events", function () {
-  //   //   it("Should emit an event on withdrawals", async function () {
-  //   //     const { lock, unlockTime, lockedAmount } = await loadFixture(
-  //   //       deployOneYearLockFixture
-  //   //     );
+    // describe("Events", function () {
+    //   it("Should emit an event on withdrawals", async function () {
+    //     const { lock, unlockTime, lockedAmount } = await loadFixture(
+    //       deployOneYearLockFixture
+    //     );
 
-  //   //     await time.increaseTo(unlockTime);
+    //     await time.increaseTo(unlockTime);
 
-  //   //     await expect(lock.withdraw())
-  //   //       .to.emit(lock, "Withdrawal")
-  //   //       .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-  //   //   });
-  //   // });
+    //     await expect(lock.withdraw())
+    //       .to.emit(lock, "Withdrawal")
+    //       .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
+    //   });
+    // });
 
 
   // });

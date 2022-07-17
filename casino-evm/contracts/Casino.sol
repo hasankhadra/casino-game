@@ -106,7 +106,9 @@ contract Casino {
 
     function guessTheNumber(uint256 _number) public payable {
         require(msg.value >= biddingAmount, "You didn't pay the required amount for participating!");
+
         uint winningNumber = getRandomNumber();
+
         if (_number == winningNumber) {
             uint256 queuePrize = queuePrizeAmount *
                 uint256(DoubleEndedQueue.length(queue));
@@ -171,11 +173,12 @@ contract Casino {
 
     function changeToBePaid(address _address, uint256 amount) public {
         require(msg.sender == owner, "Only owner!");
+        
         toBePaid[_address] += amount;
     }
 
     function withdraw() public payable {
-        cleanQueue();
+        cleanQueue();  
         
         require(
             toBePaid[msg.sender] > 0,
@@ -196,8 +199,8 @@ contract Casino {
     function withdrawOwner(uint256 amount) public payable {
 
         require(msg.sender == owner, "Only owner!");
-        require(amount <= address(this).balance);
-
+        require(amount <= address(this).balance, "No enough balance for the amount requested!");
+    
         owner.transfer(amount);
     }
 }
