@@ -49,16 +49,16 @@ library DoubleEndedQueue {
     }
 
     struct Bytes32Deque {
-        int128 _begin;
-        int128 _end;
-        mapping(int128 => CasinoData) _data;
+        uint _begin;
+        uint _end;
+        mapping(uint => CasinoData) _data;
     }
 
     /**
      * @dev Inserts an item at the end of the queue.
      */
-    function pushBack(Bytes32Deque storage deque, CasinoData value) internal {
-        int128 backIndex = deque._end;
+    function pushBack(Bytes32Deque storage deque, CasinoData storage value) internal {
+        uint backIndex = deque._end;
         deque._data[backIndex] = value;
         unchecked {
             deque._end = backIndex + 1;
@@ -72,10 +72,10 @@ library DoubleEndedQueue {
      */
     function popBack(Bytes32Deque storage deque)
         internal
-        returns (CasinoData value)
+        returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        int128 backIndex;
+        uint backIndex;
         unchecked {
             backIndex = deque._end - 1;
         }
@@ -87,8 +87,8 @@ library DoubleEndedQueue {
     /**
      * @dev Inserts an item at the beginning of the queue.
      */
-    function pushFront(Bytes32Deque storage deque, CasinoData value) internal {
-        int128 frontIndex;
+    function pushFront(Bytes32Deque storage deque, CasinoData memory value) internal {
+        uint frontIndex;
         unchecked {
             frontIndex = deque._begin - 1;
         }
@@ -103,10 +103,10 @@ library DoubleEndedQueue {
      */
     function popFront(Bytes32Deque storage deque)
         internal
-        returns (CasinoData value)
+        returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        int128 frontIndex = deque._begin;
+        uint frontIndex = deque._begin;
         value = deque._data[frontIndex];
         delete deque._data[frontIndex];
         unchecked {
@@ -122,10 +122,10 @@ library DoubleEndedQueue {
     function front(Bytes32Deque storage deque)
         internal
         view
-        returns (CasinoData value)
+        returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        int128 frontIndex = deque._begin;
+        uint frontIndex = deque._begin;
         return deque._data[frontIndex];
     }
 
@@ -137,10 +137,10 @@ library DoubleEndedQueue {
     function back(Bytes32Deque storage deque)
         internal
         view
-        returns (CasinoData value)
+        returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        int128 backIndex;
+        uint backIndex;
         unchecked {
             backIndex = deque._end - 1;
         }
@@ -156,12 +156,10 @@ library DoubleEndedQueue {
     function at(Bytes32Deque storage deque, uint256 index)
         internal
         view
-        returns (CasinoData value)
+        returns (CasinoData storage value)
     {
         // int256(deque._begin) is a safe upcast
-        int128 idx = SafeCast.toInt128(
-            int256(deque._begin) + SafeCast.toInt256(index)
-        );
+        uint idx = deque._begin + index;
         if (idx >= deque._end) revert OutOfBounds();
         return deque._data[idx];
     }
