@@ -15,7 +15,7 @@ contract Casino {
     uint256 public timeToLive;
     uint256 public numbersRange;
 
-    DoubleEndedQueue.Bytes32Deque queue;
+    DoubleEndedQueue.Bytes32Deque public queue;
 
     uint256 public pot = 0;
     uint256 public queueTakenAmount = 0;
@@ -43,6 +43,7 @@ contract Casino {
         biddingAmount = _biddingAmount;
         timeToLive = _timeToLive;
         numbersRange = _numbersRange;
+        DoubleEndedQueue.clear(queue);
     }
     
     receive() external payable {
@@ -64,9 +65,7 @@ contract Casino {
         potIncomePercentage = _potIncomePercentage;
     }
 
-    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage)
-        public
-    {
+    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage) public {
         require(msg.sender == owner, "Only owner!");
         ownerIncomePercentage = _ownerIncomePercentage;
     }
@@ -92,7 +91,7 @@ contract Casino {
     }
 
     function getRandomNumber() internal view returns (uint256) {
-        return (10 % numbersRange) + 1;
+        return (0 % numbersRange) + 1;
     }
 
     function getMax(
@@ -108,7 +107,6 @@ contract Casino {
         require(msg.value >= biddingAmount, "You didn't pay the required amount for participating!");
 
         uint winningNumber = getRandomNumber();
-
         if (_number == winningNumber) {
             uint256 queuePrize = queuePrizeAmount *
                 uint256(DoubleEndedQueue.length(queue));
@@ -142,7 +140,7 @@ contract Casino {
             // add to the pot its share from the losing bid
             pot += potShare;
 
-            // losing bid - add item to the queue after subtracting the owner and pot share and adding the alreadt queueTakenAmount
+            // losing bid - add item to the queue after subtracting the owner and pot share and adding the already queueTakenAmount
             cleanQueue();
             DoubleEndedQueue.pushFront(
                 queue,
@@ -156,12 +154,12 @@ contract Casino {
         }
     }
 
-    function cleanQueue() internal {
+    function cleanQueue() public {
         while (!DoubleEndedQueue.empty(queue)) {
             DoubleEndedQueue.CasinoData storage item = DoubleEndedQueue.back(
                 queue
             );
-            if (item.timeAdded + timeToLive >= block.timestamp) {
+            if (item.timeAdded + timeToLive <= block.timestamp) {
                 if (item.bid - queueTakenAmount > 0)
                     toBePaid[item.bidder] += item.bid - queueTakenAmount;
                 DoubleEndedQueue.popBack(queue);
@@ -171,6 +169,22 @@ contract Casino {
         }
     }
 
+    // @TODO: delete on production
+    function queueBack() public view returns (DoubleEndedQueue.CasinoData memory){
+        return DoubleEndedQueue.back(queue);
+    }
+
+    // @TODO: delete on production
+    function queueFront() public view returns (DoubleEndedQueue.CasinoData memory){
+        return DoubleEndedQueue.front(queue);
+    }
+
+    // @TODO: delete on production
+    function queueLength() public view returns (uint){
+        return DoubleEndedQueue.length(queue);
+    }
+
+    // @TODO: delete on production
     function changeToBePaid(address _address, uint256 amount) public {
         require(msg.sender == owner, "Only owner!");
         

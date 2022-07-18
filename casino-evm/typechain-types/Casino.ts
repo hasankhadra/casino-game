@@ -24,6 +24,20 @@ import type {
   PromiseOrValue,
 } from "./common";
 
+export declare namespace DoubleEndedQueue {
+  export type CasinoDataStruct = {
+    bidder: PromiseOrValue<string>;
+    bid: PromiseOrValue<BigNumberish>;
+    timeAdded: PromiseOrValue<BigNumberish>;
+  };
+
+  export type CasinoDataStructOutput = [string, BigNumber, BigNumber] & {
+    bidder: string;
+    bid: BigNumber;
+    timeAdded: BigNumber;
+  };
+}
+
 export interface CasinoInterface extends utils.Interface {
   functions: {
     "biddingAmount()": FunctionFragment;
@@ -36,6 +50,7 @@ export interface CasinoInterface extends utils.Interface {
     "changeStaticPrize(uint256)": FunctionFragment;
     "changeTimeToLive(uint256)": FunctionFragment;
     "changeToBePaid(address,uint256)": FunctionFragment;
+    "cleanQueue()": FunctionFragment;
     "getMax(uint256,uint256)": FunctionFragment;
     "guessTheNumber(uint256)": FunctionFragment;
     "numbersRange()": FunctionFragment;
@@ -44,7 +59,11 @@ export interface CasinoInterface extends utils.Interface {
     "pot()": FunctionFragment;
     "potIncomePercentage()": FunctionFragment;
     "potPrizePercentage()": FunctionFragment;
+    "queue()": FunctionFragment;
     "queueAvailableFunds()": FunctionFragment;
+    "queueBack()": FunctionFragment;
+    "queueFront()": FunctionFragment;
+    "queueLength()": FunctionFragment;
     "queuePrizeAmount()": FunctionFragment;
     "queueTakenAmount()": FunctionFragment;
     "staticPrize()": FunctionFragment;
@@ -66,6 +85,7 @@ export interface CasinoInterface extends utils.Interface {
       | "changeStaticPrize"
       | "changeTimeToLive"
       | "changeToBePaid"
+      | "cleanQueue"
       | "getMax"
       | "guessTheNumber"
       | "numbersRange"
@@ -74,7 +94,11 @@ export interface CasinoInterface extends utils.Interface {
       | "pot"
       | "potIncomePercentage"
       | "potPrizePercentage"
+      | "queue"
       | "queueAvailableFunds"
+      | "queueBack"
+      | "queueFront"
+      | "queueLength"
       | "queuePrizeAmount"
       | "queueTakenAmount"
       | "staticPrize"
@@ -125,6 +149,10 @@ export interface CasinoInterface extends utils.Interface {
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "cleanQueue",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getMax",
     values: [PromiseOrValue<BigNumberish>, PromiseOrValue<BigNumberish>]
   ): string;
@@ -150,8 +178,18 @@ export interface CasinoInterface extends utils.Interface {
     functionFragment: "potPrizePercentage",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "queue", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "queueAvailableFunds",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "queueBack", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "queueFront",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "queueLength",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -220,6 +258,7 @@ export interface CasinoInterface extends utils.Interface {
     functionFragment: "changeToBePaid",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "cleanQueue", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getMax", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "guessTheNumber",
@@ -243,8 +282,15 @@ export interface CasinoInterface extends utils.Interface {
     functionFragment: "potPrizePercentage",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "queue", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "queueAvailableFunds",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "queueBack", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "queueFront", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "queueLength",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -345,6 +391,10 @@ export interface Casino extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    cleanQueue(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     getMax(
       a: PromiseOrValue<BigNumberish>,
       b: PromiseOrValue<BigNumberish>,
@@ -368,7 +418,21 @@ export interface Casino extends BaseContract {
 
     potPrizePercentage(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    queue(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { _begin: BigNumber; _end: BigNumber }>;
+
     queueAvailableFunds(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    queueBack(
+      overrides?: CallOverrides
+    ): Promise<[DoubleEndedQueue.CasinoDataStructOutput]>;
+
+    queueFront(
+      overrides?: CallOverrides
+    ): Promise<[DoubleEndedQueue.CasinoDataStructOutput]>;
+
+    queueLength(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     queuePrizeAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -441,6 +505,10 @@ export interface Casino extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  cleanQueue(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   getMax(
     a: PromiseOrValue<BigNumberish>,
     b: PromiseOrValue<BigNumberish>,
@@ -464,7 +532,21 @@ export interface Casino extends BaseContract {
 
   potPrizePercentage(overrides?: CallOverrides): Promise<BigNumber>;
 
+  queue(
+    overrides?: CallOverrides
+  ): Promise<[BigNumber, BigNumber] & { _begin: BigNumber; _end: BigNumber }>;
+
   queueAvailableFunds(overrides?: CallOverrides): Promise<BigNumber>;
+
+  queueBack(
+    overrides?: CallOverrides
+  ): Promise<DoubleEndedQueue.CasinoDataStructOutput>;
+
+  queueFront(
+    overrides?: CallOverrides
+  ): Promise<DoubleEndedQueue.CasinoDataStructOutput>;
+
+  queueLength(overrides?: CallOverrides): Promise<BigNumber>;
 
   queuePrizeAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -537,6 +619,8 @@ export interface Casino extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    cleanQueue(overrides?: CallOverrides): Promise<void>;
+
     getMax(
       a: PromiseOrValue<BigNumberish>,
       b: PromiseOrValue<BigNumberish>,
@@ -560,7 +644,21 @@ export interface Casino extends BaseContract {
 
     potPrizePercentage(overrides?: CallOverrides): Promise<BigNumber>;
 
+    queue(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber, BigNumber] & { _begin: BigNumber; _end: BigNumber }>;
+
     queueAvailableFunds(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queueBack(
+      overrides?: CallOverrides
+    ): Promise<DoubleEndedQueue.CasinoDataStructOutput>;
+
+    queueFront(
+      overrides?: CallOverrides
+    ): Promise<DoubleEndedQueue.CasinoDataStructOutput>;
+
+    queueLength(overrides?: CallOverrides): Promise<BigNumber>;
 
     queuePrizeAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -634,6 +732,10 @@ export interface Casino extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    cleanQueue(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     getMax(
       a: PromiseOrValue<BigNumberish>,
       b: PromiseOrValue<BigNumberish>,
@@ -657,7 +759,15 @@ export interface Casino extends BaseContract {
 
     potPrizePercentage(overrides?: CallOverrides): Promise<BigNumber>;
 
+    queue(overrides?: CallOverrides): Promise<BigNumber>;
+
     queueAvailableFunds(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queueBack(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queueFront(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queueLength(overrides?: CallOverrides): Promise<BigNumber>;
 
     queuePrizeAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -731,6 +841,10 @@ export interface Casino extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    cleanQueue(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     getMax(
       a: PromiseOrValue<BigNumberish>,
       b: PromiseOrValue<BigNumberish>,
@@ -760,9 +874,17 @@ export interface Casino extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    queue(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     queueAvailableFunds(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    queueBack(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    queueFront(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    queueLength(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     queuePrizeAmount(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

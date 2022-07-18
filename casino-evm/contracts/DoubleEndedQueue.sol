@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev A sequence of items with the ability to efficiently push and pop items (i.e. insert and remove) on both ends of
@@ -49,16 +50,16 @@ library DoubleEndedQueue {
     }
 
     struct Bytes32Deque {
-        uint _begin;
-        uint _end;
-        mapping(uint => CasinoData) _data;
+        int256 _begin;
+        int256 _end;
+        mapping(int256 => CasinoData) _data;
     }
 
     /**
      * @dev Inserts an item at the end of the queue.
      */
     function pushBack(Bytes32Deque storage deque, CasinoData storage value) internal {
-        uint backIndex = deque._end;
+        int256 backIndex = deque._end;
         deque._data[backIndex] = value;
         unchecked {
             deque._end = backIndex + 1;
@@ -75,7 +76,7 @@ library DoubleEndedQueue {
         returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        uint backIndex;
+        int256 backIndex;
         unchecked {
             backIndex = deque._end - 1;
         }
@@ -88,7 +89,7 @@ library DoubleEndedQueue {
      * @dev Inserts an item at the beginning of the queue.
      */
     function pushFront(Bytes32Deque storage deque, CasinoData memory value) internal {
-        uint frontIndex;
+        int256 frontIndex;
         unchecked {
             frontIndex = deque._begin - 1;
         }
@@ -106,7 +107,7 @@ library DoubleEndedQueue {
         returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        uint frontIndex = deque._begin;
+        int256 frontIndex = deque._begin;
         value = deque._data[frontIndex];
         delete deque._data[frontIndex];
         unchecked {
@@ -125,7 +126,7 @@ library DoubleEndedQueue {
         returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        uint frontIndex = deque._begin;
+        int256 frontIndex = deque._begin;
         return deque._data[frontIndex];
     }
 
@@ -140,7 +141,7 @@ library DoubleEndedQueue {
         returns (CasinoData storage value)
     {
         if (empty(deque)) revert Empty();
-        uint backIndex;
+        int256 backIndex;
         unchecked {
             backIndex = deque._end - 1;
         }
@@ -159,7 +160,7 @@ library DoubleEndedQueue {
         returns (CasinoData storage value)
     {
         // int256(deque._begin) is a safe upcast
-        uint idx = deque._begin + index;
+        int256 idx = SafeCast.toInt128(int256(deque._begin) + SafeCast.toInt256(index));
         if (idx >= deque._end) revert OutOfBounds();
         return deque._data[idx];
     }

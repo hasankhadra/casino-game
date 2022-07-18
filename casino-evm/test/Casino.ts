@@ -3,6 +3,10 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+function delay(time: number) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
 describe("Casino", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
@@ -17,21 +21,58 @@ describe("Casino", function () {
 
     const potPrizePercentage = 10;
     const potIncomePercentage = 10;
-    const staticPrize = 1000;
-    const ownerIncomePercentage = 10;
-    const queuePrizeAmount = 20;
-    const biddingAmount = 20;
+    const staticPrize = ethers.utils.parseEther("0.5");
+    const ownerIncomePercentage = 15;
+    const queuePrizeAmount = ethers.utils.parseEther("0.02");
+    const biddingAmount = ethers.utils.parseEther("0.1");
     const timeToLive = 3600;
     const numbersRange = 8;
-    
+
     const provider = ethers.provider;
 
     const Casino = await ethers.getContractFactory("Casino");
+
     const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
       ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
 
     await casino.deployed();
-    
+
+    console.log("Casino Address", casino.address);
+    console.log();
+
+    return {
+      potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
+      provider
+    };
+  }
+
+  async function deployCasinoShortTTL() {
+
+    // Contracts are deployed using the first signer/account by default
+    const [owner, otherAccount] = await ethers.getSigners();
+    console.log();
+    console.log("Owner Address", owner.address)
+    console.log("Other account Address", otherAccount.address)
+
+    const potPrizePercentage = 10;
+    const potIncomePercentage = 10;
+    const staticPrize = ethers.utils.parseEther("0.5");
+    const ownerIncomePercentage = 15;
+    const queuePrizeAmount = ethers.utils.parseEther("0.02");
+    const biddingAmount = ethers.utils.parseEther("0.1");
+    const timeToLive = 1;
+    const numbersRange = 8;
+
+    const provider = ethers.provider;
+
+    const Casino = await ethers.getContractFactory("Casino");
+
+    const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
+
+    await casino.deployed();
+
     console.log("Casino Address", casino.address);
     console.log();
 
@@ -228,19 +269,23 @@ describe("Casino", function () {
       const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
 
       await casino.changeToBePaid(otherAccount.address, ethers.utils.parseEther("0.5"));
-      
+
       await owner.sendTransaction({
         to: casino.address,
         value: ethers.BigNumber.from("1000000000000000000")
       });
 
-      let oldOtherAccountBalance = await otherAccount.getBalance();
+      const oldOtherAccountBalance = await otherAccount.getBalance();
+      const txHash = await casino.connect(otherAccount).withdraw();
+      await txHash.wait();
 
-      await casino.connect(otherAccount).withdraw();
-      
+      expect(txHash.gasPrice).to.be.exist;
+
       expect(await casino.toBePaid(otherAccount.address)).to.be.equal(0);
 
-      expect(await otherAccount.getBalance()).to.be.greaterThan(oldOtherAccountBalance);
+      if (txHash.gasPrice)
+        expect(await otherAccount.getBalance()).to.be.closeTo(ethers.utils.parseEther("0.5").toBigInt() + oldOtherAccountBalance.toBigInt() - txHash.gasPrice?.toBigInt(),
+          BigInt(10 ** 16));
     });
 
     it("non-owner cannot withdrawOwner", async function () {
@@ -270,11 +315,16 @@ describe("Casino", function () {
         value: ethers.BigNumber.from("1000000000000000000")
       });
 
+
       const oldOwnerBalance = await owner.getBalance();
 
-      await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("1000000000000000000"));
+      const txHash = await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("1000000000000000000"));
+      await txHash.wait();
 
-      expect(await owner.getBalance()).to.be.greaterThan(oldOwnerBalance);
+      expect(txHash.gasPrice).to.be.exist;
+
+      if (txHash.gasPrice)
+        expect(await owner.getBalance()).to.be.closeTo(oldOwnerBalance.toBigInt() + ethers.BigNumber.from("1000000000000000000").toBigInt() - txHash.gasPrice.toBigInt(), BigInt(10 ** 16));
 
     });
 
@@ -286,11 +336,100 @@ describe("Casino", function () {
         value: ethers.BigNumber.from("1000000000000000000")
       });
 
+
       const oldOwnerBalance = await owner.getBalance();
 
-      await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("500000000000000000"));
+      const txHash = await casino.connect(owner).withdrawOwner(ethers.BigNumber.from("500000000000000000"));
+      await txHash.wait();
 
-      expect(await owner.getBalance()).to.be.greaterThan(oldOwnerBalance);
+      expect(txHash.gasPrice).to.be.exist;
+
+      if (txHash.gasPrice)
+        expect(await owner.getBalance()).to.be.closeTo(oldOwnerBalance.toBigInt() + ethers.BigNumber.from("500000000000000000").toBigInt() - txHash.gasPrice.toBigInt(), BigInt(10 ** 16));
+
+    });
+  });
+
+  describe("Playing the game", function () {
+    it("Losing guess => increases the pot prize, adds the user correctly to the queue, and increases queueAvailableFunds", async function () {
+      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoVariant1);
+
+      expect(await casino.queueLength()).to.be.equal(0);
+      expect(await casino.pot()).to.be.equal(0);
+      expect(await casino.queueAvailableFunds()).to.be.equal(0);
+
+      await casino.connect(otherAccount).guessTheNumber(3, {
+        value: biddingAmount
+      });
+
+      const potShare = biddingAmount.toBigInt() * BigInt(potIncomePercentage) / BigInt(100);
+      const ownerShare = biddingAmount.toBigInt() * BigInt(ownerIncomePercentage) / BigInt(100);
+
+      const [bidder, bid, timeAdded] = await casino.queueFront();
+
+      expect(bidder).to.be.equal(otherAccount.address);
+      expect(bid).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare)
+
+      expect(await casino.queueLength()).to.be.equal(1);
+      expect(await casino.pot()).to.be.equal(potShare);
+      expect(await casino.queueAvailableFunds()).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare);
+
+    });
+
+    it("Invalid guess => Insufficient sent amount of tokens", async function () {
+      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoVariant1);
+
+      expect(await casino.queueLength()).to.be.equal(0);
+      expect(await casino.pot()).to.be.equal(0);
+      expect(await casino.queueAvailableFunds()).to.be.equal(0);
+
+      await expect(casino.connect(otherAccount).guessTheNumber(3, {
+        value: biddingAmount.toBigInt() - BigInt(1)
+      })).to.be.revertedWith("You didn't pay the required amount for participating!");
+
+
+      expect(await casino.queueLength()).to.be.equal(0);
+      expect(await casino.pot()).to.be.equal(0);
+      expect(await casino.queueAvailableFunds()).to.be.equal(0);
+    });
+
+    it("Funds available after user is out of the queue", async function () {
+      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoShortTTL);
+
+      expect(await casino.queueLength()).to.be.equal(0);
+      expect(await casino.pot()).to.be.equal(0);
+      expect(await casino.queueAvailableFunds()).to.be.equal(0);
+
+      await casino.connect(otherAccount).guessTheNumber(3, {
+        value: biddingAmount
+      });
+
+      const potShare = biddingAmount.toBigInt() * BigInt(potIncomePercentage) / BigInt(100);
+      const ownerShare = biddingAmount.toBigInt() * BigInt(ownerIncomePercentage) / BigInt(100);
+
+      const [bidder, bid, timeAdded] = await casino.queueFront();
+
+      expect(bidder).to.be.equal(otherAccount.address);
+      expect(bid).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare)
+
+      expect(await casino.queueLength()).to.be.equal(1);
+      expect(await casino.pot()).to.be.equal(potShare);
+      expect(await casino.queueAvailableFunds()).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare);
+
+      delay(2000).then(() => console.log('ran after 1 second1 passed'));
+
+      const oldOtherAccountBalance = await otherAccount.getBalance();
+      const txHash = await casino.connect(otherAccount).withdraw();
+      await txHash.wait();
+
+      expect(txHash.gasPrice).to.be.exist;
+
+      if (txHash.gasPrice)
+        expect(await otherAccount.getBalance()).to.be.closeTo(oldOtherAccountBalance.toBigInt() + biddingAmount.toBigInt()
+          - potShare - ownerShare - txHash.gasPrice?.toBigInt(), BigInt(10 ** 16));
+
+      expect(await casino.toBePaid(otherAccount.address)).to.be.equal(0);
+
 
     });
   });
@@ -330,19 +469,19 @@ describe("Casino", function () {
   //     });
   //   });
 
-    // describe("Events", function () {
-    //   it("Should emit an event on withdrawals", async function () {
-    //     const { lock, unlockTime, lockedAmount } = await loadFixture(
-    //       deployOneYearLockFixture
-    //     );
+  // describe("Events", function () {
+  //   it("Should emit an event on withdrawals", async function () {
+  //     const { lock, unlockTime, lockedAmount } = await loadFixture(
+  //       deployOneYearLockFixture
+  //     );
 
-    //     await time.increaseTo(unlockTime);
+  //     await time.increaseTo(unlockTime);
 
-    //     await expect(lock.withdraw())
-    //       .to.emit(lock, "Withdrawal")
-    //       .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-    //   });
-    // });
+  //     await expect(lock.withdraw())
+  //       .to.emit(lock, "Withdrawal")
+  //       .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
+  //   });
+  // });
 
 
   // });
