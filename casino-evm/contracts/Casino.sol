@@ -4,8 +4,9 @@ pragma solidity ^0.8.9;
 // Import this file to use console.log
 import "./DoubleEndedQueue.sol";
 import "hardhat/console.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
-contract Casino {
+contract Casino is VRFConsumerBase {
     uint256 public potPrizePercentage;
     uint256 public potIncomePercentage;
     uint256 public staticPrize;
@@ -24,6 +25,10 @@ contract Casino {
     address payable public owner;
     mapping(address => uint256) public toBePaid;
 
+    bytes32 internal keyHash;
+    uint256 internal fee;
+    uint256 public randomResult;
+
     constructor(
         uint256 _potPrizePercentage,
         uint256 _potIncomePercentage,
@@ -33,7 +38,10 @@ contract Casino {
         uint256 _biddingAmount,
         uint256 _timeToLive,
         uint256 _numbersRange
-    ) {
+    ) VRFConsumerBase(
+            0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
+            0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
+        ) {
         owner = payable(msg.sender);
         potPrizePercentage = _potPrizePercentage;
         potIncomePercentage = _potIncomePercentage;
@@ -44,6 +52,8 @@ contract Casino {
         timeToLive = _timeToLive;
         numbersRange = _numbersRange;
         DoubleEndedQueue.clear(queue);
+        keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
+        fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
     }
     
     receive() external payable {
@@ -90,9 +100,21 @@ contract Casino {
         numbersRange = _numbersRange;
     }
 
-    function getRandomNumber() internal view returns (uint256) {
-        return (0 % numbersRange) + 1;
+    /**
+     * Requests randomness
+     */
+    function getRandomNumber() public returns (bytes32 requestId) {
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
+        return requestRandomness(keyHash, fee);
     }
+
+    /**
+     * Callback function used by VRF Coordinator
+     */
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        randomResult = randomness;
+    }
+
 
     function getMax(
         uint256 a,
@@ -106,7 +128,7 @@ contract Casino {
     function guessTheNumber(uint256 _number) public payable {
         require(msg.value >= biddingAmount, "You didn't pay the required amount for participating!");
 
-        uint winningNumber = getRandomNumber();
+        uint winningNumber = randomResult;
         if (_number == winningNumber) {
             uint256 queuePrize = queuePrizeAmount *
                 uint256(DoubleEndedQueue.length(queue));
