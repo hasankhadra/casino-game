@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 // Import this file to use console.log
 import "./DoubleEndedQueue.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 contract Casino is VRFConsumerBase {
@@ -24,10 +24,12 @@ contract Casino is VRFConsumerBase {
 
     address payable public owner;
     mapping(address => uint256) public toBePaid;
+    mapping(bytes32 => address) public requestIdToAddress;
+    mapping(bytes32 => uint256) public requestIdToGuess;
 
     bytes32 internal keyHash;
     uint256 internal fee;
-    uint256 public randomResult;
+    uint256 internal randomResult;
 
     constructor(
         uint256 _potPrizePercentage,
@@ -38,10 +40,12 @@ contract Casino is VRFConsumerBase {
         uint256 _biddingAmount,
         uint256 _timeToLive,
         uint256 _numbersRange
-    ) VRFConsumerBase(
-            0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
-            0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
-        ) {
+    )
+        VRFConsumerBase(
+            0x8C7382F9D8f56b33781fE506E897a4F1e2d17255, // VRF Coordinator
+            0x326C977E6efc84E512bB9C30f76E30c160eD06FB // LINK Token
+        )
+    {
         owner = payable(msg.sender);
         potPrizePercentage = _potPrizePercentage;
         potIncomePercentage = _potIncomePercentage;
@@ -52,10 +56,10 @@ contract Casino is VRFConsumerBase {
         timeToLive = _timeToLive;
         numbersRange = _numbersRange;
         DoubleEndedQueue.clear(queue);
-        keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
-        fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
+        keyHash = 0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4;
+        fee = 0.0001 * 10**18; // 0.1 LINK (Varies by network)
     }
-    
+
     receive() external payable {
         // React to receiving ether
     }
@@ -75,7 +79,9 @@ contract Casino is VRFConsumerBase {
         potIncomePercentage = _potIncomePercentage;
     }
 
-    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage) public {
+    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage)
+        public
+    {
         require(msg.sender == owner, "Only owner!");
         ownerIncomePercentage = _ownerIncomePercentage;
     }
@@ -100,35 +106,48 @@ contract Casino is VRFConsumerBase {
         numbersRange = _numbersRange;
     }
 
+    function getMax(uint256 a, uint256 b) public pure returns (uint256) {
+        if (a > b) return a;
+        return b;
+    }
+
     /**
      * Requests randomness
      */
-    function getRandomNumber() public returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
+    function getRandomNumber() internal returns (bytes32 requestId) {
+        require(
+            LINK.balanceOf(address(this)) >= fee,
+            "Not enough LINK - fill contract with faucet"
+        );
         return requestRandomness(keyHash, fee);
     }
 
     /**
      * Callback function used by VRF Coordinator
      */
-    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        randomResult = randomness;
-    }
-
-
-    function getMax(
-        uint256 a,
-        uint256 b
-    ) public pure returns (uint256) {
-        if (a > b)
-            return a;
-        return b;
+    function fulfillRandomness(bytes32 requestId, uint256 randomness)
+        internal
+        override
+    {
+        handleGuess(requestIdToAddress[requestId], requestIdToGuess[requestId], (randomness % numbersRange) + 1);
     }
 
     function guessTheNumber(uint256 _number) public payable {
-        require(msg.value >= biddingAmount, "You didn't pay the required amount for participating!");
+        require(
+            msg.value >= biddingAmount,
+            "You didn't pay the required amount for participating!"
+        );
 
-        uint winningNumber = randomResult;
+        bytes32 requestId = getRandomNumber();
+        requestIdToAddress[requestId] = msg.sender;
+        requestIdToGuess[requestId] = _number;
+    }
+
+    function handleGuess(address bidder, uint256 _number, uint256 winningNumber)
+        public
+        payable
+        returns (uint256, uint256)
+    {
         if (_number == winningNumber) {
             uint256 queuePrize = queuePrizeAmount *
                 uint256(DoubleEndedQueue.length(queue));
@@ -137,27 +156,25 @@ contract Casino is VRFConsumerBase {
             if (maxPrize == queuePrize) {
                 queueTakenAmount += queuePrizeAmount;
                 cleanQueue();
-            } 
+            }
 
             toBePaid[msg.sender] += maxPrize;
-        } 
-        else if(_number == (winningNumber % numbersRange) + 1){
+        } else if (_number == (winningNumber % numbersRange) + 1) {
             uint256 potPrize = (potPrizePercentage * pot) / 100;
 
             uint256 maxPrize = getMax(potPrize, staticPrize);
 
             if (maxPrize == potPrize) {
                 pot -= potPrize;
-            } 
+            }
 
             toBePaid[msg.sender] += maxPrize;
-        }
-        else {
+        } else {
             // keep the owner its share from the losing bid inside the
             // contract's funds
-            uint256 ownerShare = (msg.value * ownerIncomePercentage) / 100;
+            uint256 ownerShare = (biddingAmount * ownerIncomePercentage) / 100;
 
-            uint256 potShare = (msg.value * potIncomePercentage) / 100;
+            uint256 potShare = (biddingAmount * potIncomePercentage) / 100;
 
             // add to the pot its share from the losing bid
             pot += potShare;
@@ -168,12 +185,13 @@ contract Casino is VRFConsumerBase {
                 queue,
                 DoubleEndedQueue.CasinoData(
                     msg.sender,
-                    msg.value - ownerShare - potShare + queueTakenAmount,
+                    biddingAmount - ownerShare - potShare + queueTakenAmount,
                     block.timestamp
                 )
             );
-            queueAvailableFunds += msg.value - ownerShare - potShare;
+            queueAvailableFunds += biddingAmount - ownerShare - potShare;
         }
+        return (winningNumber, (winningNumber % numbersRange) + 1);
     }
 
     function cleanQueue() public {
@@ -192,30 +210,38 @@ contract Casino is VRFConsumerBase {
     }
 
     // @TODO: delete on production
-    function queueBack() public view returns (DoubleEndedQueue.CasinoData memory){
+    function queueBack()
+        public
+        view
+        returns (DoubleEndedQueue.CasinoData memory)
+    {
         return DoubleEndedQueue.back(queue);
     }
 
     // @TODO: delete on production
-    function queueFront() public view returns (DoubleEndedQueue.CasinoData memory){
+    function queueFront()
+        public
+        view
+        returns (DoubleEndedQueue.CasinoData memory)
+    {
         return DoubleEndedQueue.front(queue);
     }
 
     // @TODO: delete on production
-    function queueLength() public view returns (uint){
+    function queueLength() public view returns (uint256) {
         return DoubleEndedQueue.length(queue);
     }
 
     // @TODO: delete on production
     function changeToBePaid(address _address, uint256 amount) public {
         require(msg.sender == owner, "Only owner!");
-        
+
         toBePaid[_address] += amount;
     }
 
     function withdraw() public payable {
-        cleanQueue();  
-        
+        cleanQueue();
+
         require(
             toBePaid[msg.sender] > 0,
             "You can't withdraw yet - Not allowed to withdraw 0 funds!"
@@ -226,17 +252,19 @@ contract Casino is VRFConsumerBase {
             "Sorry, there are no enough funds in the game contract, will fund it soon!"
         );
 
-        uint _toBePaid = toBePaid[msg.sender];
+        uint256 _toBePaid = toBePaid[msg.sender];
         toBePaid[msg.sender] = 0;
 
         payable(msg.sender).transfer(_toBePaid);
     }
 
     function withdrawOwner(uint256 amount) public payable {
-
         require(msg.sender == owner, "Only owner!");
-        require(amount <= address(this).balance, "No enough balance for the amount requested!");
-    
+        require(
+            amount <= address(this).balance,
+            "No enough balance for the amount requested!"
+        );
+
         owner.transfer(amount);
     }
 }
