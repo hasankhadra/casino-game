@@ -143,11 +143,11 @@ contract Casino is VRFConsumerBase {
         requestIdTesting += 1;
     }
 
-    function handleGuess(address bidder, uint256 _number, uint256 winningNumber)
-        public
-        payable
-        returns (uint256, uint256)
-    {
+    function handleGuess(
+        address bidder,
+        uint256 _number,
+        uint256 winningNumber
+    ) public payable returns (uint256, uint256) {
         if (_number == winningNumber) {
             uint256 queuePrize = queuePrizeAmount *
                 uint256(DoubleEndedQueue.length(queue));
@@ -244,7 +244,6 @@ contract Casino is VRFConsumerBase {
         owner.transfer(amount);
     }
 
-
     /**
      * Requests randomness
      */
@@ -263,29 +262,44 @@ contract Casino is VRFConsumerBase {
         internal
         override
     {
-        handleGuess(requestIdToAddress[requestId], requestIdToGuess[requestId], (randomness % numbersRange) + 1);
+        handleGuess(
+            requestIdToAddress[requestId],
+            requestIdToGuess[requestId],
+            (randomness % numbersRange) + 1
+        );
     }
 
     // @TODO: delete on production
-    function fulfillRandomnessTesting(uint requestId, uint256 randomness)
+    function fulfillRandomnessTesting(uint256 requestId, uint256 randomness)
         internal
     {
-        handleGuess(requestIdToAddressTesting[requestId], requestIdToGuessTesting[requestId], (randomness % numbersRange) + 1);
+        handleGuess(
+            requestIdToAddressTesting[requestId],
+            requestIdToGuessTesting[requestId],
+            (randomness % numbersRange) + 1
+        );
     }
-    
+
     // @TODO: delete on production
-    function queueBack() public view returns (DoubleEndedQueue.CasinoData memory){
+    function queueBack()
+        public
+        view
+        returns (DoubleEndedQueue.CasinoData memory)
+    {
         return DoubleEndedQueue.back(queue);
     }
 
     // @TODO: delete on production
-    function queueFront() public view returns (DoubleEndedQueue.CasinoData memory){
+    function queueFront()
+        public
+        view
+        returns (DoubleEndedQueue.CasinoData memory)
+    {
         return DoubleEndedQueue.front(queue);
     }
 
     // @TODO: delete on production
-    function queueLength() public view returns (uint){
+    function queueLength() public view returns (uint256) {
         return DoubleEndedQueue.length(queue);
     }
-
 }

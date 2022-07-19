@@ -7,11 +7,8 @@ function delay(time: number) {
   return new Promise(resolve => setTimeout(resolve, time));
 }
 
-describe("Casino", function () {
+describe("Casino with static random", function () {
 
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshopt in every test.
   async function deployCasinoVariant1() {
 
     // Contracts are deployed using the first signer/account by default
@@ -40,7 +37,7 @@ describe("Casino", function () {
 
     console.log("Casino Address", casino.address);
     console.log("---------------");
-    
+
     return {
       potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
       ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
@@ -61,6 +58,114 @@ describe("Casino", function () {
     const staticPrize = ethers.utils.parseEther("0.5");
     const ownerIncomePercentage = 15;
     const queuePrizeAmount = ethers.utils.parseEther("0.02");
+    const biddingAmount = ethers.utils.parseEther("0.1");
+    const timeToLive = 1;
+    const numbersRange = 8;
+
+    const provider = ethers.provider;
+
+    const Casino = await ethers.getContractFactory("Casino");
+
+    const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
+
+    await casino.deployed();
+
+    console.log("Casino Address", casino.address);
+    console.log();
+
+    return {
+      potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
+      provider
+    };
+  }
+
+  async function deployCasinoShortTTLPrizeFromQueue() {
+
+    // Contracts are deployed using the first signer/account by default
+    const [owner, otherAccount] = await ethers.getSigners();
+    console.log();
+    console.log("Owner Address", owner.address)
+    console.log("Other account Address", otherAccount.address)
+
+    const potPrizePercentage = 10;
+    const potIncomePercentage = 10;
+    const staticPrize = ethers.utils.parseEther("0.000002");
+    const ownerIncomePercentage = 15;
+    const queuePrizeAmount = ethers.utils.parseEther("0.02");
+    const biddingAmount = ethers.utils.parseEther("0.1");
+    const timeToLive = 1;
+    const numbersRange = 8;
+
+    const provider = ethers.provider;
+
+    const Casino = await ethers.getContractFactory("Casino");
+
+    const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
+
+    await casino.deployed();
+
+    console.log("Casino Address", casino.address);
+    console.log();
+
+    return {
+      potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
+      provider
+    };
+  }
+
+  async function deployCasinoShortTTLPrizeFromPot() {
+
+    // Contracts are deployed using the first signer/account by default
+    const [owner, otherAccount] = await ethers.getSigners();
+    console.log();
+    console.log("Owner Address", owner.address)
+    console.log("Other account Address", otherAccount.address)
+
+    const potPrizePercentage = 50;
+    const potIncomePercentage = 50;
+    const staticPrize = ethers.utils.parseEther("0.000002");
+    const ownerIncomePercentage = 15;
+    const queuePrizeAmount = ethers.utils.parseEther("0.000002");
+    const biddingAmount = ethers.utils.parseEther("0.1");
+    const timeToLive = 1;
+    const numbersRange = 8;
+
+    const provider = ethers.provider;
+
+    const Casino = await ethers.getContractFactory("Casino");
+
+    const casino = await Casino.connect(owner).deploy(potPrizePercentage, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange);
+
+    await casino.deployed();
+
+    console.log("Casino Address", casino.address);
+    console.log();
+
+    return {
+      potPrizePercentage, casino, owner, otherAccount, potIncomePercentage, staticPrize,
+      ownerIncomePercentage, queuePrizeAmount, biddingAmount, timeToLive, numbersRange,
+      provider
+    };
+  }
+
+  async function deployCasinoShortTTLPrizeFromStaticPrize() {
+
+    // Contracts are deployed using the first signer/account by default
+    const [owner, otherAccount] = await ethers.getSigners();
+    console.log();
+    console.log("Owner Address", owner.address)
+    console.log("Other account Address", otherAccount.address)
+
+    const potPrizePercentage = 20;
+    const potIncomePercentage = 20;
+    const staticPrize = ethers.utils.parseEther("0.5");
+    const ownerIncomePercentage = 15;
+    const queuePrizeAmount = ethers.utils.parseEther("0.000002");
     const biddingAmount = ethers.utils.parseEther("0.1");
     const timeToLive = 1;
     const numbersRange = 8;
@@ -223,6 +328,7 @@ describe("Casino", function () {
     });
 
   });
+
   describe("Withdrawals", function () {
     it("User cannot withdraw if he has no funds available", async function () {
       const { casino, otherAccount, owner } = await loadFixture(deployCasinoVariant1);
@@ -329,7 +435,7 @@ describe("Casino", function () {
 
   describe("Playing the game", function () {
     it("Losing guess => increases the pot prize, adds the user correctly to the queue, and increases queueAvailableFunds", async function () {
-      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoVariant1);
+      const { casino, otherAccount, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoVariant1);
 
       expect(await casino.queueLength()).to.be.equal(0);
       expect(await casino.pot()).to.be.equal(0);
@@ -343,7 +449,7 @@ describe("Casino", function () {
 
       const ownerShare = biddingAmount.toBigInt() * BigInt(ownerIncomePercentage) / BigInt(100);
 
-      const [bidder, bid, timeAdded] = await casino.queueFront();
+      const [bidder, bid] = await casino.queueFront();
 
       expect(bidder).to.be.equal(otherAccount.address);
       expect(bid).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare)
@@ -355,7 +461,7 @@ describe("Casino", function () {
     });
 
     it("Invalid guess => Insufficient sent amount of tokens", async function () {
-      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoVariant1);
+      const { casino, otherAccount, biddingAmount } = await loadFixture(deployCasinoVariant1);
 
       expect(await casino.queueLength()).to.be.equal(0);
       expect(await casino.pot()).to.be.equal(0);
@@ -371,8 +477,8 @@ describe("Casino", function () {
       expect(await casino.queueAvailableFunds()).to.be.equal(0);
     });
 
-    it("Funds available after user is out of the queue", async function () {
-      const { casino, otherAccount, owner, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoShortTTL);
+    it("Funds available to withdraw after user is out of the queue", async function () {
+      const { casino, otherAccount, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoShortTTL);
 
       expect(await casino.queueLength()).to.be.equal(0);
       expect(await casino.pot()).to.be.equal(0);
@@ -410,6 +516,74 @@ describe("Casino", function () {
 
 
     });
+
+    it("biddings in the queue get reduced if a player wins from queue", async function () {
+      const { casino, otherAccount, queuePrizeAmount, biddingAmount, potIncomePercentage, ownerIncomePercentage } = await loadFixture(deployCasinoShortTTLPrizeFromQueue);
+
+      await casino.connect(otherAccount).guessTheNumberTesting(4, {
+        value: biddingAmount
+      });
+
+      const potShare = biddingAmount.toBigInt() * BigInt(potIncomePercentage) / BigInt(100);
+      const ownerShare = biddingAmount.toBigInt() * BigInt(ownerIncomePercentage) / BigInt(100);
+
+      delay(2000).then(() => console.log('ran after 2 seconds passed'));
+
+      casino.guessTheNumberTesting(1, {
+        value: biddingAmount
+      })
+
+      expect(await casino.pot()).to.be.equal(potShare);
+      expect(await casino.queueAvailableFunds()).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare);
+
+      expect(await casino.toBePaid(otherAccount.address)).to.be.equal(
+        biddingAmount.toBigInt() - potShare - ownerShare - queuePrizeAmount.toBigInt()
+      );
+
+    });
+
+    it("winner correctly wins from pot", async function () {
+      const { casino, otherAccount, owner, queuePrizeAmount, biddingAmount, potIncomePercentage, ownerIncomePercentage, potPrizePercentage } = await loadFixture(deployCasinoShortTTLPrizeFromPot);
+
+      await casino.connect(otherAccount).guessTheNumberTesting(4, {
+        value: biddingAmount
+      });
+
+      const potShare = biddingAmount.toBigInt() * BigInt(potIncomePercentage) / BigInt(100);
+      const ownerShare = biddingAmount.toBigInt() * BigInt(ownerIncomePercentage) / BigInt(100);
+
+      delay(2000).then(() => console.log('ran after 2 seconds passed'));
+
+      casino.guessTheNumberTesting(2, {
+        value: biddingAmount
+      })
+
+      expect(await casino.pot()).to.be.equal(potShare * BigInt(potPrizePercentage) / BigInt(100));
+
+      expect(await casino.toBePaid(owner.address)).to.be.equal(
+        potShare * BigInt(potPrizePercentage) / BigInt(100)
+      );
+
+    });
+
+    it("winner correctly wins from static prize", async function () {
+      const { casino, otherAccount, owner, staticPrize, biddingAmount, potIncomePercentage, ownerIncomePercentage, potPrizePercentage } = await loadFixture(deployCasinoShortTTLPrizeFromStaticPrize);
+
+      await owner.sendTransaction({
+        to: casino.address,
+        value: ethers.BigNumber.from("1000000000000000000")
+      });
+
+      await casino.connect(otherAccount).guessTheNumberTesting(1, {
+        value: biddingAmount
+      });
+
+      expect(await casino.toBePaid(otherAccount.address)).to.be.equal(
+        staticPrize
+      );
+
+    });
+
   });
 
 });
