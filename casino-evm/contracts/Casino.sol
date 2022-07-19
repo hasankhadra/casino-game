@@ -24,12 +24,18 @@ contract Casino is VRFConsumerBase {
 
     address payable public owner;
     mapping(address => uint256) public toBePaid;
+
     mapping(bytes32 => address) public requestIdToAddress;
     mapping(bytes32 => uint256) public requestIdToGuess;
 
     bytes32 internal keyHash;
     uint256 internal fee;
     uint256 internal randomResult;
+
+    // @TODO: delete on production!
+    uint256 requestIdTesting = 0;
+    mapping(uint256 => address) public requestIdToAddressTesting;
+    mapping(uint256 => uint256) public requestIdToGuessTesting;
 
     constructor(
         uint256 _potPrizePercentage,
@@ -111,17 +117,6 @@ contract Casino is VRFConsumerBase {
         return b;
     }
 
-    /**
-     * Requests randomness
-     */
-    function getRandomNumber() internal returns (bytes32 requestId) {
-        require(
-            LINK.balanceOf(address(this)) >= fee,
-            "Not enough LINK - fill contract with faucet"
-        );
-        return requestRandomness(keyHash, fee);
-    }
-
     function guessTheNumber(uint256 _number) public payable {
         require(
             msg.value >= biddingAmount,
@@ -131,6 +126,21 @@ contract Casino is VRFConsumerBase {
         bytes32 requestId = getRandomNumber();
         requestIdToAddress[requestId] = msg.sender;
         requestIdToGuess[requestId] = _number;
+    }
+
+    // @TODO: delete on production - only for testing
+    function guessTheNumberTesting(uint256 _number) public payable {
+        require(
+            msg.value >= biddingAmount,
+            "You didn't pay the required amount for participating!"
+        );
+
+        requestIdToAddressTesting[requestIdTesting] = msg.sender;
+        requestIdToGuessTesting[requestIdTesting] = _number;
+
+        fulfillRandomnessTesting(requestIdTesting, 0);
+
+        requestIdTesting += 1;
     }
 
     function handleGuess(address bidder, uint256 _number, uint256 winningNumber)
@@ -148,7 +158,7 @@ contract Casino is VRFConsumerBase {
                 cleanQueue();
             }
 
-            toBePaid[msg.sender] += maxPrize;
+            toBePaid[bidder] += maxPrize;
         } else if (_number == (winningNumber % numbersRange) + 1) {
             uint256 potPrize = (potPrizePercentage * pot) / 100;
 
@@ -158,7 +168,7 @@ contract Casino is VRFConsumerBase {
                 pot -= potPrize;
             }
 
-            toBePaid[msg.sender] += maxPrize;
+            toBePaid[bidder] += maxPrize;
         } else {
             // keep the owner its share from the losing bid inside the
             // contract's funds
@@ -174,7 +184,7 @@ contract Casino is VRFConsumerBase {
             DoubleEndedQueue.pushFront(
                 queue,
                 DoubleEndedQueue.CasinoData(
-                    msg.sender,
+                    bidder,
                     biddingAmount - ownerShare - potShare + queueTakenAmount,
                     block.timestamp
                 )
@@ -234,6 +244,18 @@ contract Casino is VRFConsumerBase {
         owner.transfer(amount);
     }
 
+
+    /**
+     * Requests randomness
+     */
+    function getRandomNumber() internal returns (bytes32 requestId) {
+        require(
+            LINK.balanceOf(address(this)) >= fee,
+            "Not enough LINK - fill contract with faucet"
+        );
+        return requestRandomness(keyHash, fee);
+    }
+
     /**
      * Callback function used by VRF Coordinator
      */
@@ -242,6 +264,13 @@ contract Casino is VRFConsumerBase {
         override
     {
         handleGuess(requestIdToAddress[requestId], requestIdToGuess[requestId], (randomness % numbersRange) + 1);
+    }
+
+    // @TODO: delete on production
+    function fulfillRandomnessTesting(uint requestId, uint256 randomness)
+        internal
+    {
+        handleGuess(requestIdToAddressTesting[requestId], requestIdToGuessTesting[requestId], (randomness % numbersRange) + 1);
     }
     
     // @TODO: delete on production
