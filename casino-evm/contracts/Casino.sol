@@ -108,14 +108,6 @@ contract Casino is VRFConsumerBase {
         return requestRandomness(keyHash, fee);
     }
 
-    /**
-     * Callback function used by VRF Coordinator
-     */
-    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        randomResult = randomness;
-    }
-
-
     function getMax(
         uint256 a,
         uint256 b
@@ -192,21 +184,6 @@ contract Casino is VRFConsumerBase {
     }
 
     // @TODO: delete on production
-    function queueBack() public view returns (DoubleEndedQueue.CasinoData memory){
-        return DoubleEndedQueue.back(queue);
-    }
-
-    // @TODO: delete on production
-    function queueFront() public view returns (DoubleEndedQueue.CasinoData memory){
-        return DoubleEndedQueue.front(queue);
-    }
-
-    // @TODO: delete on production
-    function queueLength() public view returns (uint){
-        return DoubleEndedQueue.length(queue);
-    }
-
-    // @TODO: delete on production
     function changeToBePaid(address _address, uint256 amount) public {
         require(msg.sender == owner, "Only owner!");
         
@@ -239,4 +216,27 @@ contract Casino is VRFConsumerBase {
     
         owner.transfer(amount);
     }
+
+    /**
+     * Callback function used by VRF Coordinator
+     */
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        randomResult = randomness;
+    }
+    
+    // @TODO: delete on production
+    function queueBack() public view returns (DoubleEndedQueue.CasinoData memory){
+        return DoubleEndedQueue.back(queue);
+    }
+
+    // @TODO: delete on production
+    function queueFront() public view returns (DoubleEndedQueue.CasinoData memory){
+        return DoubleEndedQueue.front(queue);
+    }
+
+    // @TODO: delete on production
+    function queueLength() public view returns (uint){
+        return DoubleEndedQueue.length(queue);
+    }
+
 }
