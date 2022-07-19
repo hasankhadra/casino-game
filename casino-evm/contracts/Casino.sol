@@ -23,10 +23,6 @@ contract Casino is VRFConsumerBase {
     uint256 public queueAvailableFunds = 0;
 
     address payable public owner;
-    mapping(address => uint256) public toBePaid;
-
-    mapping(bytes32 => address) public requestIdToAddress;
-    mapping(bytes32 => uint256) public requestIdToGuess;
 
     bytes32 internal keyHash;
     uint256 internal fee;
@@ -34,8 +30,14 @@ contract Casino is VRFConsumerBase {
 
     // @TODO: delete on production!
     uint256 requestIdTesting = 0;
+
     mapping(uint256 => address) public requestIdToAddressTesting;
     mapping(uint256 => uint256) public requestIdToGuessTesting;
+    mapping(address => uint256) public toBePaid;
+    mapping(bytes32 => address) public requestIdToAddress;
+    mapping(bytes32 => uint256) public requestIdToGuess;
+
+    event StaticPrizeChange(uint256 newStaticPrize);
 
     constructor(
         uint256 _potPrizePercentage,
@@ -78,6 +80,8 @@ contract Casino is VRFConsumerBase {
     function changeStaticPrize(uint256 _staticPrize) public {
         require(msg.sender == owner, "Only owner!");
         staticPrize = _staticPrize;
+
+        emit StaticPrizeChange(_staticPrize);
     }
 
     function changePotIncomePercentage(uint256 _potIncomePercentage) public {
