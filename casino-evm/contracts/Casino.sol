@@ -155,6 +155,7 @@ contract Casino is VRFConsumerBase {
 
             if (maxPrize == queuePrize) {
                 queueTakenAmount += queuePrizeAmount;
+                queueAvailableFunds -= queuePrize;
                 cleanQueue();
             }
             emit GuessedTheNumber(bidder, _number, winningNumber, maxPrize);
@@ -204,15 +205,16 @@ contract Casino is VRFConsumerBase {
             );
             if (item.timeAdded + timeToLive <= block.timestamp) {
                 if (item.bid - queueTakenAmount > 0){
-
-                    emit GuessedTheNumber(item.bidder, item.guessedNumber, item.winningNumber, item.bid - queueTakenAmount);
                     toBePaid[item.bidder] += item.bid - queueTakenAmount;
                 }
-                DoubleEndedQueue.popBack(queue);
-            } else if (item.bid - queueTakenAmount == 0) {
                 emit GuessedTheNumber(item.bidder, item.guessedNumber, item.winningNumber, item.bid - queueTakenAmount);
                 DoubleEndedQueue.popBack(queue);
-            } else break;
+            } 
+            else if (item.bid - queueTakenAmount == 0) {
+                emit GuessedTheNumber(item.bidder, item.guessedNumber, item.winningNumber, item.bid - queueTakenAmount);
+                DoubleEndedQueue.popBack(queue);
+            } 
+            else break;
         }
     }
 

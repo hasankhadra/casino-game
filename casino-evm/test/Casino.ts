@@ -534,7 +534,7 @@ describe("Casino with static random", function () {
       })
 
       expect(await casino.pot()).to.be.equal(potShare);
-      expect(await casino.queueAvailableFunds()).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare);
+      expect(await casino.queueAvailableFunds()).to.be.equal(biddingAmount.toBigInt() - potShare - ownerShare - queuePrizeAmount.toBigInt());
 
       expect(await casino.toBePaid(otherAccount.address)).to.be.equal(
         biddingAmount.toBigInt() - potShare - ownerShare - queuePrizeAmount.toBigInt()
