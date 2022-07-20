@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react'
-import { useConnect } from 'wagmi'
+import {  useAccount,
+  useConnect,
+  useDisconnect,
+  useEnsAvatar,
+  useEnsName, } from 'wagmi'
 
 export function ConnectWallet() {
   const { connect, connectors, error, isLoading, pendingConnector } =
     useConnect()
-  const unsupportedMsg: string = " (unsupported)"
-  const [dodo, setDodo] = useState("");
-
+    const { address, connector, isConnected } = useAccount();
+  const { data: ensAvatar } = useEnsAvatar({ addressOrName: address });
+  const { data: ensName } = useEnsName({ address });
+  const { disconnect } = useDisconnect();
+    if (isConnected) {
+      return (
+        <div>
+          <div>{ensName ? `${ensName} (${address})` : address}</div>
+          <div>Connected to {connector.name}</div>
+          <button onClick={disconnect}>Disconnect</button>
+        </div>
+      )
+    }
   return (
     <div>
       {connectors.map((connector) => (
