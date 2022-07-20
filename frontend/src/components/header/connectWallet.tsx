@@ -4,7 +4,6 @@ import {  useAccount,
   useDisconnect,
   useEnsAvatar,
   useEnsName, } from 'wagmi'
-
 export function ConnectWallet() {
   const { connect, connectors, error, isLoading, pendingConnector } =
     useConnect()
@@ -12,7 +11,7 @@ export function ConnectWallet() {
   const { data: ensAvatar } = useEnsAvatar({ addressOrName: address });
   const { data: ensName } = useEnsName({ address });
   const { disconnect } = useDisconnect();
-    if (isConnected) {
+    if (isConnected&&connector) {
       return (
         <div>
           <div>{ensName ? `${ensName} (${address})` : address}</div>
