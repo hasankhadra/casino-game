@@ -37,7 +37,7 @@ contract Casino is VRFConsumerBase {
     mapping(bytes32 => address) public requestIdToAddress;
     mapping(bytes32 => uint256) public requestIdToGuess;
 
-    event StaticPrizeChange(uint256 newStaticPrize);
+    event GuessedTheNumber(address indexed bidder, uint indexed guessedNumber, uint indexed winningNumber, uint prize);
 
     constructor(
         uint256 _potPrizePercentage,
@@ -80,8 +80,6 @@ contract Casino is VRFConsumerBase {
     function changeStaticPrize(uint256 _staticPrize) public {
         require(msg.sender == owner, "Only owner!");
         staticPrize = _staticPrize;
-
-        emit StaticPrizeChange(_staticPrize);
     }
 
     function changePotIncomePercentage(uint256 _potIncomePercentage) public {
@@ -89,9 +87,7 @@ contract Casino is VRFConsumerBase {
         potIncomePercentage = _potIncomePercentage;
     }
 
-    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage)
-        public
-    {
+    function changeOwnerIncomePercentage(uint256 _ownerIncomePercentage) public {
         require(msg.sender == owner, "Only owner!");
         ownerIncomePercentage = _ownerIncomePercentage;
     }
@@ -161,7 +157,7 @@ contract Casino is VRFConsumerBase {
                 queueTakenAmount += queuePrizeAmount;
                 cleanQueue();
             }
-
+            emit GuessedTheNumber(bidder, _number, winningNumber, maxPrize);
             toBePaid[bidder] += maxPrize;
         } else if (_number == (winningNumber % numbersRange) + 1) {
             uint256 potPrize = (potPrizePercentage * pot) / 100;
@@ -172,6 +168,7 @@ contract Casino is VRFConsumerBase {
                 pot -= potPrize;
             }
 
+            emit GuessedTheNumber(bidder, _number, winningNumber, maxPrize);
             toBePaid[bidder] += maxPrize;
         } else {
             // keep the owner its share from the losing bid inside the
@@ -190,6 +187,8 @@ contract Casino is VRFConsumerBase {
                 DoubleEndedQueue.CasinoData(
                     bidder,
                     biddingAmount - ownerShare - potShare + queueTakenAmount,
+                    _number,
+                    winningNumber,
                     block.timestamp
                 )
             );
@@ -204,10 +203,14 @@ contract Casino is VRFConsumerBase {
                 queue
             );
             if (item.timeAdded + timeToLive <= block.timestamp) {
-                if (item.bid - queueTakenAmount > 0)
+                if (item.bid - queueTakenAmount > 0){
+
+                    emit GuessedTheNumber(item.bidder, item.guessedNumber, item.winningNumber, item.bid - queueTakenAmount);
                     toBePaid[item.bidder] += item.bid - queueTakenAmount;
+                }
                 DoubleEndedQueue.popBack(queue);
             } else if (item.bid - queueTakenAmount == 0) {
+                emit GuessedTheNumber(item.bidder, item.guessedNumber, item.winningNumber, item.bid - queueTakenAmount);
                 DoubleEndedQueue.popBack(queue);
             } else break;
         }

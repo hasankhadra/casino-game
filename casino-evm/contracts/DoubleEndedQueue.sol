@@ -3,7 +3,6 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "hardhat/console.sol";
 
 /**
  * @dev A sequence of items with the ability to efficiently push and pop items (i.e. insert and remove) on both ends of
@@ -46,6 +45,8 @@ library DoubleEndedQueue {
     struct CasinoData {
         address bidder;
         uint bid;
+        uint guessedNumber;
+        uint winningNumber;
         uint timeAdded;
     }
 

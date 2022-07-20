@@ -1,23 +1,24 @@
 import { BigInt } from "@graphprotocol/graph-ts"
-import { Casino, StaticPrizeChange } from "../generated/Casino/Casino"
-import { StaticPrize } from "../generated/schema"
+import { Casino, GuessedTheNumber } from "../generated/Casino/Casino"
+import { Guess } from "../generated/schema"
 
-export function handleStaticPrizeChange(event: StaticPrizeChange): void {
+export function handleGuessedTheNumber(event: GuessedTheNumber): void {
   // Entities can be loaded from the store using a string ID; this ID
   // needs to be unique across all entities of the same type
-  let entity = StaticPrize.load(event.transaction.from.toHex())
+  let entity = Guess.load(event.transaction.from.toHex())
 
   // Entities only exist after they have been saved to the store;
   // `null` checks allow to create entities on demand
   if (!entity) {
-    entity = new StaticPrize(event.transaction.from.toHex())
+    entity = new Guess(event.transaction.from.toHex())
 
-    // Entity fields can be set using simple assignments
-    entity.newStaticPrize = BigInt.fromI32(0)
   }
 
   // Entity fields can be set based on event parameters
-  entity.newStaticPrize = event.params.newStaticPrize
+  entity.bidder = event.params.bidder.toString();
+  entity.guessedNumber = event.params.guessedNumber;
+  entity.winningNumber = event.params.winningNumber;
+  entity.prize = event.params.prize;
 
   // Entities can be written to the store with `.save()`
   entity.save()

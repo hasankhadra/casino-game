@@ -10,21 +10,33 @@ import {
   BigInt
 } from "@graphprotocol/graph-ts";
 
-export class StaticPrizeChange extends ethereum.Event {
-  get params(): StaticPrizeChange__Params {
-    return new StaticPrizeChange__Params(this);
+export class GuessedTheNumber extends ethereum.Event {
+  get params(): GuessedTheNumber__Params {
+    return new GuessedTheNumber__Params(this);
   }
 }
 
-export class StaticPrizeChange__Params {
-  _event: StaticPrizeChange;
+export class GuessedTheNumber__Params {
+  _event: GuessedTheNumber;
 
-  constructor(event: StaticPrizeChange) {
+  constructor(event: GuessedTheNumber) {
     this._event = event;
   }
 
-  get newStaticPrize(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
+  get bidder(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get guessedNumber(): BigInt {
+    return this._event.parameters[1].value.toBigInt();
+  }
+
+  get winningNumber(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get prize(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
   }
 }
 
@@ -62,8 +74,16 @@ export class Casino__queueBackResultValue0Struct extends ethereum.Tuple {
     return this[1].toBigInt();
   }
 
-  get timeAdded(): BigInt {
+  get guessedNumber(): BigInt {
     return this[2].toBigInt();
+  }
+
+  get winningNumber(): BigInt {
+    return this[3].toBigInt();
+  }
+
+  get timeAdded(): BigInt {
+    return this[4].toBigInt();
   }
 }
 
@@ -76,8 +96,16 @@ export class Casino__queueFrontResultValue0Struct extends ethereum.Tuple {
     return this[1].toBigInt();
   }
 
-  get timeAdded(): BigInt {
+  get guessedNumber(): BigInt {
     return this[2].toBigInt();
+  }
+
+  get winningNumber(): BigInt {
+    return this[3].toBigInt();
+  }
+
+  get timeAdded(): BigInt {
+    return this[4].toBigInt();
   }
 }
 
@@ -283,7 +311,7 @@ export class Casino extends ethereum.SmartContract {
   queueBack(): Casino__queueBackResultValue0Struct {
     let result = super.call(
       "queueBack",
-      "queueBack():((address,uint256,uint256))",
+      "queueBack():((address,uint256,uint256,uint256,uint256))",
       []
     );
 
@@ -293,7 +321,7 @@ export class Casino extends ethereum.SmartContract {
   try_queueBack(): ethereum.CallResult<Casino__queueBackResultValue0Struct> {
     let result = super.tryCall(
       "queueBack",
-      "queueBack():((address,uint256,uint256))",
+      "queueBack():((address,uint256,uint256,uint256,uint256))",
       []
     );
     if (result.reverted) {
@@ -308,7 +336,7 @@ export class Casino extends ethereum.SmartContract {
   queueFront(): Casino__queueFrontResultValue0Struct {
     let result = super.call(
       "queueFront",
-      "queueFront():((address,uint256,uint256))",
+      "queueFront():((address,uint256,uint256,uint256,uint256))",
       []
     );
 
@@ -320,7 +348,7 @@ export class Casino extends ethereum.SmartContract {
   try_queueFront(): ethereum.CallResult<Casino__queueFrontResultValue0Struct> {
     let result = super.tryCall(
       "queueFront",
-      "queueFront():((address,uint256,uint256))",
+      "queueFront():((address,uint256,uint256,uint256,uint256))",
       []
     );
     if (result.reverted) {

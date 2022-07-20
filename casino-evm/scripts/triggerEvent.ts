@@ -667,12 +667,10 @@ const abi =  [
 async function main() {
     const [owner] = await ethers.getSigners();
 
-    const contract = new ethers.Contract("0x6ac87BA1C8dAA614cEAd783F4b8aE763549c409f", abi, owner);
+    const contract = new ethers.Contract("0xb4926B66ee76214773F96FfE58840b0e1c085dD6", abi, owner);
     await contract.changeStaticPrize(5);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
     console.error(error);
     process.exitCode = 1;

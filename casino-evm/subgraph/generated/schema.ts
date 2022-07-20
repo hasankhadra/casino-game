@@ -11,7 +11,7 @@ import {
   BigDecimal
 } from "@graphprotocol/graph-ts";
 
-export class StaticPrize extends Entity {
+export class Guess extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
@@ -19,18 +19,18 @@ export class StaticPrize extends Entity {
 
   save(): void {
     let id = this.get("id");
-    assert(id != null, "Cannot save StaticPrize entity without an ID");
+    assert(id != null, "Cannot save Guess entity without an ID");
     if (id) {
       assert(
         id.kind == ValueKind.STRING,
-        `Entities of type StaticPrize must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+        `Entities of type Guess must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
       );
-      store.set("StaticPrize", id.toString(), this);
+      store.set("Guess", id.toString(), this);
     }
   }
 
-  static load(id: string): StaticPrize | null {
-    return changetype<StaticPrize | null>(store.get("StaticPrize", id));
+  static load(id: string): Guess | null {
+    return changetype<Guess | null>(store.get("Guess", id));
   }
 
   get id(): string {
@@ -42,12 +42,39 @@ export class StaticPrize extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get newStaticPrize(): BigInt {
-    let value = this.get("newStaticPrize");
+  get bidder(): string {
+    let value = this.get("bidder");
+    return value!.toString();
+  }
+
+  set bidder(value: string) {
+    this.set("bidder", Value.fromString(value));
+  }
+
+  get guessedNumber(): BigInt {
+    let value = this.get("guessedNumber");
     return value!.toBigInt();
   }
 
-  set newStaticPrize(value: BigInt) {
-    this.set("newStaticPrize", Value.fromBigInt(value));
+  set guessedNumber(value: BigInt) {
+    this.set("guessedNumber", Value.fromBigInt(value));
+  }
+
+  get winningNumber(): BigInt {
+    let value = this.get("winningNumber");
+    return value!.toBigInt();
+  }
+
+  set winningNumber(value: BigInt) {
+    this.set("winningNumber", Value.fromBigInt(value));
+  }
+
+  get prize(): BigInt {
+    let value = this.get("prize");
+    return value!.toBigInt();
+  }
+
+  set prize(value: BigInt) {
+    this.set("prize", Value.fromBigInt(value));
   }
 }

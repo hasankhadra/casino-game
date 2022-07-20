@@ -1,4 +1,8 @@
-type StaticPrize @entity {
+
+type Guess @entity {
   id: ID!
-  newStaticPrize: BigInt! # uint256
+  bidder: String! 
+  guessedNumber: BigInt!
+  winningNumber: BigInt!
+  prize: BigInt!
 }
