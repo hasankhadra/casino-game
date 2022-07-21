@@ -1,0 +1,24 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Casino
+    network: mumbai
+    source:
+      address: "0x6ac87BA1C8dAA614cEAd783F4b8aE763549c409f"
+      abi: Casino
+      startBlock: 27246708
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - Guess
+      abis:
+        - name: Casino
+          file: ./abis/Casino.json
+      eventHandlers:
+        - event: GuessedTheNumber(indexed address,indexed uint256,indexed uint256,uint256)
+          handler: handleGuessedTheNumber
+      file: ./src/casino.ts

@@ -1,5 +1,5 @@
 {
-  "name": "casino-game",
+  "name": "casinogame",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
@@ -11,5 +11,10 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "hardhat": "^2.10.1"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.4.1",
+    "@openzeppelin/contracts": "^4.7.0",
+    "dotenv": "^16.0.1"
   }
 }

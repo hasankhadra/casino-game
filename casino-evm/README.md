@@ -1,2 +1,2 @@
 # casino-game
- Blockchain based game
+Blockchain based game

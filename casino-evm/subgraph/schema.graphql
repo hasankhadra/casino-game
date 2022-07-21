@@ -1,0 +1,8 @@
+
+type Guess @entity {
+  id: ID!
+  bidder: String! 
+  guessedNumber: BigInt!
+  winningNumber: BigInt!
+  prize: BigInt!
+}
