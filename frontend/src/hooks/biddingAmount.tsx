@@ -9,7 +9,6 @@ export function biddingAmount() {
         functionName: 'biddingAmount',
         chainId: 80001
       })
-      console.log(data);
       if(!data)return 2;
       return data.toString();
   }

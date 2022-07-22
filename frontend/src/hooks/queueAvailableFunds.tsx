@@ -9,7 +9,6 @@ export function queueAvailableFunds() {
         functionName: 'queueAvailableFunds',
         chainId: 80001
       })
-      console.log(data);
       if(!data)return 2;
       return data.toString();
   }

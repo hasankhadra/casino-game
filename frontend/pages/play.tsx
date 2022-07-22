@@ -9,7 +9,13 @@ import { staticPrize } from '../src/hooks/staticPrize'
 import { biddingAmount } from '../src/hooks/biddingAmount'
 import { numbersRange } from '../src/hooks/numbersRange'
 import { timeToLive } from '../src/hooks/timeToLive'
+import { useGuessTheNumber } from '../src/hooks/useGuessTheNumber'
+import { useState } from 'react';
 const Home: NextPage = () => {
+  const [userNumber,setUserNumber]=useState(0);
+  const guessNumber = () => {
+    if(userNumber)useGuessTheNumber(userNumber);
+  }
   return (
     <div>
       <Header />
@@ -38,6 +44,15 @@ const Home: NextPage = () => {
         "timeToLive : "}
         {timeToLive()}
       </div>
+      <input
+          onChange={(event) => setUserNumber(event.target.value)}
+          value={userNumber}
+          type="number"
+          alt="your number"
+        />
+        <button type="button" onClick={guessNumber}>
+          Submit
+        </button>
     </div>
   )
 }
