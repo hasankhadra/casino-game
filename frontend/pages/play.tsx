@@ -3,13 +3,22 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import Link from "next/link";
 import Header from "../src/components/header/header"
-import {useGetqueuePrizeAmount} from '../src/hooks/useGetqueuePrizeAmount'
+import {queueAvailableFunds} from '../src/hooks/queueAvailableFunds'
+import {pot} from '../src/hooks/pot'
 const Home: NextPage = () => {
   return (
     <div>
       <Header/>
     <h1>Play</h1>
-    {useGetqueuePrizeAmount()}
+    <div>{
+    "queueAvailableFunds : "}
+      {queueAvailableFunds()}
+    </div>
+    <div>{
+    "pot : "}
+      {pot()}
+    </div>
+
     </div>
   )
 }
