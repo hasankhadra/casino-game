@@ -6,7 +6,7 @@ import {  useAccount,
   useEnsName, } from 'wagmi'
 export function ConnectWallet() {
   const { connect, connectors, error, isLoading, pendingConnector } =
-    useConnect()
+    useConnect();
     const { address, connector, isConnected } = useAccount();
   const { data: ensAvatar } = useEnsAvatar({ addressOrName: address });
   const { data: ensName } = useEnsName({ address });

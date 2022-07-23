@@ -21,17 +21,21 @@ import { useGetGuesses } from '../src/hooks/graph_client/useGetGuesses';
 
 const Home: NextPage = () => {
   const [userNumber, setUserNumber] = useState(0);
-  const { address } = useAccount();
   const contract = useCasinoContract();
+  const { address, connector, isConnected } = useAccount();
   const { data: guesses, loading: isLoading, error: isError } = useGetGuesses();
 
   const guessNumber = async () => {
-    if (userNumber)
+    if (userNumber&&isConnected)
       await contract.guessTheNumber(userNumber, {
         value: ethers.utils.parseEther("0.0000001")
       });
+    else alert('connect wallet');
   }
-
+  const withdraw = async () => {
+    if (isConnected)
+      await contract.withdraw();
+  }
   return (
     <div>
       <Header />
@@ -69,7 +73,10 @@ const Home: NextPage = () => {
       <button type="button" onClick={guessNumber}>
         Submit
       </button>
-      <div>
+      <button onClick={withdraw}>
+        withdraw
+      </button>
+       <div>
         History:
         {
           isLoading || isError ? (<div> Loading previous games ... </div>) : <ul>{guesses.guesses.map((guess: any, index: any) =>
@@ -88,7 +95,7 @@ const Home: NextPage = () => {
               <div>-------------</div>
             </li>)}</ul>
         }
-      </div>
+      </div> 
     </div>
   )
 }
