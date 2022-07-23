@@ -3,29 +3,35 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import Link from "next/link";
 import Header from "../src/components/header/header"
-import { useQueueAvailableFunds } from '../src/hooks/queueAvailableFunds'
-import { usePot } from '../src/hooks/pot'
-import { useStaticPrize } from '../src/hooks/staticPrize'
-import { useBiddingAmount } from '../src/hooks/biddingAmount'
-import { useNumbersRange } from '../src/hooks/numbersRange'
-import { useTimeToLive } from '../src/hooks/timeToLive'
+import { useQueueAvailableFunds } from '../src/hooks/useQueueAvailableFunds'
+import { usePot } from '../src/hooks/usePot'
+import { useStaticPrize } from '../src/hooks/useStaticPrize'
+import { useBiddingAmount } from '../src/hooks/useBiddingAmount'
+import { useNumbersRange } from '../src/hooks/useNumbersRange'
+import { useTimeToLive } from '../src/hooks/useTimeToLive'
 import { useState } from 'react';
-import { useContract,useSigner } from 'wagmi'
-import {abi} from '../src/utils/config'
+import { useContract, useSigner, useAccount } from 'wagmi'
+import { abi } from '../src/utils/config'
 import { ethers } from 'ethers';
+import { useQuery, gql } from '@apollo/client';
+import { useCasinoContract } from '../src/hooks/contracts/useCasinoContract';
+import { useGetGuesses } from '../src/hooks/graph_client/useGetGuesses';
+
+
+
 const Home: NextPage = () => {
-  const [userNumber,setUserNumber]=useState(0);
-  const { data: signer, isError, isLoading } = useSigner();
-  const contract = useContract({
-    addressOrName: '0x2fcbF5542C244f4fb074B7FDB000246f5a855b2D',
-    contractInterface: abi,
-    signerOrProvider: signer,
-  })
+  const [userNumber, setUserNumber] = useState(0);
+  const { address } = useAccount();
+  const contract = useCasinoContract();
+  const { data: guesses, loading: isLoading, error: isError } = useGetGuesses();
+
   const guessNumber = async () => {
-    if(userNumber)await contract.guessTheNumber(userNumber, {
-      value: ethers.utils.parseEther("0.0000001")
-    });
+    if (userNumber)
+      await contract.guessTheNumber(userNumber, {
+        value: ethers.utils.parseEther("0.0000001")
+      });
   }
+
   return (
     <div>
       <Header />
@@ -55,14 +61,34 @@ const Home: NextPage = () => {
         {useTimeToLive()}
       </div>
       <input
-          onChange={(event) => setUserNumber(event.target.value)}
-          value={userNumber}
-          type="number"
-          alt="your number"
-        />
-        <button type="button" onClick={guessNumber}>
-          Submit
-        </button>
+        onChange={(event) => setUserNumber(parseInt(event.target.value))}
+        value={userNumber}
+        type="number"
+        alt="your number"
+      />
+      <button type="button" onClick={guessNumber}>
+        Submit
+      </button>
+      <div>
+        History:
+        {
+          isLoading || isError ? (<div> Loading previous games ... </div>) : <ul>{guesses.guesses.map((guess: any, index: any) =>
+            <li key={index}>
+              <div>
+                Your guessed number: {guess.guessedNumber}
+              </div>
+              <div>
+
+                Correct number: {guess.winningNumber}
+              </div>
+              <div>
+
+                Your prize: {guess.prize / 10 ** 18} MATIC
+              </div>
+              <div>-------------</div>
+            </li>)}</ul>
+        }
+      </div>
     </div>
   )
 }

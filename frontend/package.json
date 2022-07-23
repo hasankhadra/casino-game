@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ./src ./pages --ext .js,.ts,.jsx,.tsx",
+    "lint:fix": "eslint ./src ./pages --fix --ext .js,.ts,.jsx,.tsx"
   },
   "dependencies": {
+    "@apollo/client": "^3.6.9",
     "ethers": "^5.6.9",
+    "graphql": "^16.5.0",
     "next": "12.2.2",
     "react": "17.0.2",
     "react-dom": "17.0.2",
