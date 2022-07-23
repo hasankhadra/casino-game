@@ -15,7 +15,7 @@ export function handleGuessedTheNumber(event: GuessedTheNumber): void {
   }
 
   // Entity fields can be set based on event parameters
-  entity.bidder = event.params.bidder.toString();
+  entity.bidder = event.params.bidder.toHex();
   entity.guessedNumber = event.params.guessedNumber;
   entity.winningNumber = event.params.winningNumber;
   entity.prize = event.params.prize;
