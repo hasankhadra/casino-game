@@ -3,18 +3,28 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import Link from "next/link";
 import Header from "../src/components/header/header"
-import { queueAvailableFunds } from '../src/hooks/queueAvailableFunds'
-import { pot } from '../src/hooks/pot'
-import { staticPrize } from '../src/hooks/staticPrize'
-import { biddingAmount } from '../src/hooks/biddingAmount'
-import { numbersRange } from '../src/hooks/numbersRange'
-import { timeToLive } from '../src/hooks/timeToLive'
-import { useGuessTheNumber } from '../src/hooks/useGuessTheNumber'
+import { useQueueAvailableFunds } from '../src/hooks/queueAvailableFunds'
+import { usePot } from '../src/hooks/pot'
+import { useStaticPrize } from '../src/hooks/staticPrize'
+import { useBiddingAmount } from '../src/hooks/biddingAmount'
+import { useNumbersRange } from '../src/hooks/numbersRange'
+import { useTimeToLive } from '../src/hooks/timeToLive'
 import { useState } from 'react';
+import { useContract,useSigner } from 'wagmi'
+import {abi} from '../src/utils/config'
+import { ethers } from 'ethers';
 const Home: NextPage = () => {
   const [userNumber,setUserNumber]=useState(0);
-  const guessNumber = () => {
-    if(userNumber)useGuessTheNumber(userNumber);
+  const { data: signer, isError, isLoading } = useSigner();
+  const contract = useContract({
+    addressOrName: '0x2fcbF5542C244f4fb074B7FDB000246f5a855b2D',
+    contractInterface: abi,
+    signerOrProvider: signer,
+  })
+  const guessNumber = async () => {
+    if(userNumber)await contract.guessTheNumber(userNumber, {
+      value: ethers.utils.parseEther("0.0000001")
+    });
   }
   return (
     <div>
@@ -22,27 +32,27 @@ const Home: NextPage = () => {
       <h1>Play</h1>
       <div>{
         "queueAvailableFunds : "}
-        {queueAvailableFunds()}
+        {useQueueAvailableFunds()}
       </div>
       <div>{
         "pot : "}
-        {pot()}
+        {usePot()}
       </div>
       <div>{
         "staticPrize : "}
-        {staticPrize()}
+        {useStaticPrize()}
       </div>
       <div>{
         "biddingAmount : "}
-        {biddingAmount()}
+        {useBiddingAmount()}
       </div>
       <div>{
         "numbersRange : "}
-        {numbersRange()}
+        {useNumbersRange()}
       </div>
       <div>{
         "timeToLive : "}
-        {timeToLive()}
+        {useTimeToLive()}
       </div>
       <input
           onChange={(event) => setUserNumber(event.target.value)}

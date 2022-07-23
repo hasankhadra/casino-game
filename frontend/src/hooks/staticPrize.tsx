@@ -2,9 +2,9 @@ import {ethers} from 'ethers'
 import React, { useState, useEffect } from 'react';
 import { useContractRead } from 'wagmi'
 import {abi} from '../utils/config'
-export function staticPrize() {
+export function useStaticPrize() {
     const { data, isError, isLoading ,status} = useContractRead({
-        addressOrName: '0xb4926B66ee76214773F96FfE58840b0e1c085dD6',
+        addressOrName: '0xb995B48a3965942d3Aa4c3FE215e404943Ff1900',
         contractInterface: abi,
         functionName: 'staticPrize',
         chainId: 80001
