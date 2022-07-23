@@ -22,4 +22,6 @@ const config: HardhatUserConfig = {
   }
 };
 
+export const contractAddress = "0x12e9701E97111Afe67c7ffD7FEEb6566fec64BCe";
+
 export default config;

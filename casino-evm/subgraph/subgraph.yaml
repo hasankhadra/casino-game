@@ -6,12 +6,12 @@ dataSources:
     name: Casino
     network: mumbai
     source:
-      address: "0x6ac87BA1C8dAA614cEAd783F4b8aE763549c409f"
+      address: "0x12e9701E97111Afe67c7ffD7FEEb6566fec64BCe"
       abi: Casino
-      startBlock: 27246708
+      startBlock: 27292582
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - Guess

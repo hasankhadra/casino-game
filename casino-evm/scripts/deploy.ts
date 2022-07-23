@@ -6,8 +6,8 @@ async function main() {
   const staticPrize = ethers.utils.parseEther("0.5");
   const ownerIncomePercentage = 15;
   const queuePrizeAmount = ethers.utils.parseEther("0.02");
-  const biddingAmount = ethers.utils.parseEther("0.1");
-  const timeToLive = 3600;
+  const biddingAmount = ethers.utils.parseEther("0.0000001");
+  const timeToLive = 60;
   const numbersRange = 8;
 
   const Casino = await ethers.getContractFactory("Casino");

@@ -194,6 +194,7 @@ contract Casino is VRFConsumerBase {
                 )
             );
             queueAvailableFunds += biddingAmount - ownerShare - potShare;
+            emit GuessedTheNumber(bidder, _number, winningNumber, 0);
         }
         return (winningNumber, (winningNumber % numbersRange) + 1);
     }

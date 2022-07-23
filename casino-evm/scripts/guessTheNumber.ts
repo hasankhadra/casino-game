@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { contractAddress } from "../hardhat.config";
 
 const abi =  [
     {
@@ -667,8 +668,11 @@ const abi =  [
 async function main() {
     const [owner] = await ethers.getSigners();
 
-    const contract = new ethers.Contract("0xb4926B66ee76214773F96FfE58840b0e1c085dD6", abi, owner);
-    await contract.changeStaticPrize(5);
+    const contract = new ethers.Contract(contractAddress, abi, owner);
+    await contract.guessTheNumber(6, {
+      value: ethers.utils.parseEther("0.0000001")
+    });
+
 }
 
 main().catch((error) => {
