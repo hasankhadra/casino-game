@@ -16,6 +16,13 @@ import { InjectedConnector } from 'wagmi/connectors/injected'
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 const alchemyId = process.env.ALCHEMY_ID
+import { ApolloClient, InMemoryCache, ApolloProvider, gql } from '@apollo/client';
+
+
+const graphClient = new ApolloClient({
+  uri: 'https://api.thegraph.com/subgraphs/name/hasankhadra/casino-subgraph',
+  cache: new InMemoryCache(),
+});
 
 const { chains, provider, webSocketProvider } = configureChains(
   [chain.mainnet, chain.polygon, chain.polygonMumbai],
@@ -23,7 +30,7 @@ const { chains, provider, webSocketProvider } = configureChains(
 )
 
 // Set up client
-const client = createClient({
+const walletClient = createClient({
   autoConnect: true,
   connectors: [
     new MetaMaskConnector({ chains }),
@@ -33,8 +40,10 @@ const client = createClient({
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <WagmiConfig client={client}>
-      <Component {...pageProps} />
+    <WagmiConfig client={walletClient}>
+      <ApolloProvider client={graphClient}>
+        <Component {...pageProps} />
+      </ApolloProvider>
     </WagmiConfig>
   )
 }
