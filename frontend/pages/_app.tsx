@@ -10,6 +10,7 @@ import {
 
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
+import { ChakraProvider } from '@chakra-ui/react'
 
 import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet'
 import { InjectedConnector } from 'wagmi/connectors/injected'
@@ -42,7 +43,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig client={walletClient}>
       <ApolloProvider client={graphClient}>
-        <Component {...pageProps} />
+        <ChakraProvider>
+          <Component {...pageProps} />
+        </ChakraProvider>
       </ApolloProvider>
     </WagmiConfig>
   )
